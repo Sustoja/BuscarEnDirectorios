@@ -1,0 +1,4 @@
+python-docx
+pypdf
+PyQt5
+whoosh
