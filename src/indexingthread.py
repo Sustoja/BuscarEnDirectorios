@@ -8,9 +8,8 @@ from whoosh.qparser import MultifieldParser
 from whoosh.support.charset import accent_map
 from whoosh.writing import AsyncWriter
 
-from src.helpers import logger
-from src.helpers import filehashing as fhs
-from src.helpers.textextractor import extract_content
+from helpers import extract_content, fhs
+from logger import mylogger
 
 
 ARCHIVO_HASHES = 'hashes.pickle'
@@ -66,7 +65,7 @@ class IndexingThread(QThread):
 
             if (current_hash not in old_hashes) or (old_hashes[current_hash] != file_path):
                 content = extract_content(file_path)
-                logger.log.info(f"Añadiendo al índice: {file_path}")
+                mylogger.log.info(f"Añadiendo al índice: {file_path}")
                 writer.update_document(
                     title=os.path.splitext(os.path.basename(file_path))[0],
                     path=file_path,
@@ -79,7 +78,7 @@ class IndexingThread(QThread):
             for deleted_hash in deleted_hashes:
                 deleted_path = old_hashes[deleted_hash]
                 writer.delete_by_term('path', deleted_path)  # Usamos la ruta completa como identificador
-                logger.log.info(f"Eliminando del índice: {deleted_path}")
+                mylogger.log.info(f"Eliminando del índice: {deleted_path}")
 
         writer.commit()
         hash_file = str(PurePath(self.index_folder) / ARCHIVO_HASHES)

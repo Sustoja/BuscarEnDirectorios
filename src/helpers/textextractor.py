@@ -1,8 +1,7 @@
 import os
 from docx import Document
 from pypdf import PdfReader
-
-from src.helpers import logger
+from logger import mylogger
 
 def extract_text_from_docx(file_path: str) -> str:
     doc = Document(file_path)
@@ -31,5 +30,5 @@ def extract_content(file_path: str) -> str:
         try:
             return extractor(file_path)
         except Exception as e:
-            logger.log.warning(f"No se ha podido extraer texto de {file_path}: {e}")
+            mylogger.log.warning(f"No se ha podido extraer texto de {file_path}: {e}")
     return ""

@@ -5,8 +5,9 @@ from PyQt5.QtWidgets import (QApplication, QGroupBox, QWidget, QVBoxLayout, QCom
                              QLineEdit, QPushButton, QFileDialog, QProgressBar, QTextBrowser, QMessageBox)
 from PyQt5.QtGui import QDesktopServices
 from PyQt5.QtCore import QUrl
-import indexingthread as fidx
 from gui_config import VALID_DOC_EXTENSIONS, INDEX_ROOT_DIR, APP_WIDTH, APP_HEIGHT, STYLES
+
+import indexingthread as fidx
 
 
 class IndexSearchApp(QWidget):
