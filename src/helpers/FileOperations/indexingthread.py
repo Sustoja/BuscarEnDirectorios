@@ -8,8 +8,9 @@ from whoosh.qparser import MultifieldParser
 from whoosh.support.charset import accent_map
 from whoosh.writing import AsyncWriter
 
-from helpers import extract_content, fhs
-from logger import mylogger
+from .filehashing import compute_hash, save_hash_file, read_hash_file
+from .textextractor import extract_content
+from ..Logger import mylogger
 
 
 ARCHIVO_HASHES = 'hashes.pickle'
@@ -25,7 +26,7 @@ def create_schema() -> Schema:
 
 
 def process_document(file_path: str) -> {}:
-    content = extract_content(file_path)
+    content = extract_content(file_path, mylogger)
     title = os.path.splitext(os.path.basename(file_path))[0]
     return {
         "title": title,
@@ -54,13 +55,13 @@ class IndexingThread(QThread):
         else:
             idx = open_dir(self.index_folder)
             hash_file = str(PurePath(self.index_folder) / ARCHIVO_HASHES)
-            old_hashes = fhs.read_hash_file(hash_file)
+            old_hashes = read_hash_file(hash_file)
 
         writer = AsyncWriter(idx)
         new_hashes = {}
 
         for i, file_path in enumerate(self.docs_list):
-            current_hash = fhs.compute_hash(file_path)
+            current_hash = compute_hash(file_path)
             new_hashes[current_hash] = file_path
 
             if (current_hash not in old_hashes) or (old_hashes[current_hash] != file_path):
@@ -82,7 +83,7 @@ class IndexingThread(QThread):
 
         writer.commit()
         hash_file = str(PurePath(self.index_folder) / ARCHIVO_HASHES)
-        fhs.save_hash_file(hash_file, new_hashes)
+        save_hash_file(hash_file, new_hashes)
         self.indexing_complete.emit()
 
 

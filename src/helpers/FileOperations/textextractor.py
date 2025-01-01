@@ -1,7 +1,8 @@
 import os
 from docx import Document
 from pypdf import PdfReader
-from logger import mylogger
+from ..Logger import mylogger
+
 
 def extract_text_from_docx(file_path: str) -> str:
     doc = Document(file_path)

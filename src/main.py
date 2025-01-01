@@ -1,4 +1,3 @@
-
 import os
 from PyQt5.QtWidgets import QApplication
 from gui import IndexSearchApp, INDEX_ROOT_DIR

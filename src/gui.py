@@ -5,9 +5,9 @@ from PyQt5.QtWidgets import (QApplication, QGroupBox, QWidget, QVBoxLayout, QCom
                              QLineEdit, QPushButton, QFileDialog, QProgressBar, QTextBrowser, QMessageBox)
 from PyQt5.QtGui import QDesktopServices
 from PyQt5.QtCore import QUrl
-from gui_config import VALID_DOC_EXTENSIONS, INDEX_ROOT_DIR, APP_WIDTH, APP_HEIGHT, STYLES
+from  gui_config import VALID_DOC_EXTENSIONS, INDEX_ROOT_DIR, APP_WIDTH, APP_HEIGHT, STYLES
 
-import indexingthread as fidx
+import helpers.FileOperations.indexingthread as fidx
 
 
 class IndexSearchApp(QWidget):
@@ -22,6 +22,13 @@ class IndexSearchApp(QWidget):
     def open_link_in_browser(url: QUrl) -> None:
         QDesktopServices.openUrl(url)
 
+    @staticmethod
+    def get_list_of_files(folder: str) -> []:
+        return [os.path.join(root, file)
+                for root, _, files in os.walk(folder)
+                for file in files
+                if file.lower().endswith(VALID_DOC_EXTENSIONS)]
+
     def __init__(self, index_root_dir: str = INDEX_ROOT_DIR):
         super().__init__()
         self.idx_root_folder = index_root_dir             # Normalmente toma el valor de INDEX_ROOT_DIR
@@ -29,7 +36,6 @@ class IndexSearchApp(QWidget):
         self.all_files = [] # Lista de ficheros a indexar. Depende de la carpeta que seleccione el usuario
 
         self.init_ui()
-
 
     def _get_idx_subfolders(self):
         """Obtiene las carpetas ya indexadas."""
@@ -121,8 +127,13 @@ class IndexSearchApp(QWidget):
 
     # BEGIN INDEXING METHODS
     def index_new_folder(self):
-        folder = QFileDialog.getExistingDirectory(self, "Seleccionar carpeta")
-        if folder:
+        if folder:= QFileDialog.getExistingDirectory(self, "Seleccionar carpeta"):
+            all_files = self.get_list_of_files(folder)
+            if len(all_files) == 0:
+                QMessageBox.warning(self, 'Aviso', f"No hay documentos para indexar en {folder}")
+                return
+
+            self.all_files = all_files
             path = PurePath(folder)
             new_list_item = (str(path.relative_to(path.anchor))
                              .replace('/', '_')
@@ -142,12 +153,6 @@ class IndexSearchApp(QWidget):
 
     def _start_indexing_thread(self, folder_to_be_indexed, index_folder):
         """Inicia el hilo de indexación y actualiza la interfaz de usuario."""
-        # Formamos la lista de ficheros a indexar recorriendo el arbol de carpetas
-        self.all_files = [os.path.join(root, file)
-                          for root, _, files in os.walk(folder_to_be_indexed)
-                          for file in files
-                          if file.lower().endswith(VALID_DOC_EXTENSIONS)]
-
         self.indexing_thread = fidx.IndexingThread(index_folder, self.all_files)
         self.indexing_thread.progress_updated.connect(self.progress_bar.setValue)
         self.indexing_thread.progress_updated.connect(self.on_indexing_progress)
@@ -192,7 +197,7 @@ class IndexSearchApp(QWidget):
         """Realiza la búsqueda del término en el índice seleccionado."""
         query = self.search_input.text()
         if not query.strip():
-            QMessageBox.warning(self, "Entrada inválida", "Por favor, introduzca un término para buscar.")
+            QMessageBox.warning(self, "Aviso", "Por favor, introduzca un término para buscar.")
             return
 
         index_folder = f'{self.idx_root_folder}/{self.idx_folders_combo.currentText()}'
