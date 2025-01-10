@@ -26,7 +26,7 @@ def create_schema() -> Schema:
 
 
 def process_document(file_path: str) -> {}:
-    content = extract_content(file_path, mylogger)
+    content = extract_content(file_path)
     title = os.path.splitext(os.path.basename(file_path))[0]
     return {
         "title": title,
@@ -68,7 +68,11 @@ class IndexingThread(QThread):
             new_hashes[current_hash] = file_path
 
             if (current_hash not in old_hashes) or (old_hashes[current_hash] != file_path):
-                content = extract_content(file_path)
+                try:
+                    content = extract_content(file_path)
+                except ValueError as ex:
+                    mylogger.log.warning(ex)
+                    continue
                 mylogger.log.info(f"Añadiendo al índice: {file_path}")
                 writer.update_document(
                     title=os.path.splitext(os.path.basename(file_path))[0],

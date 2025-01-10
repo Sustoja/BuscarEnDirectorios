@@ -5,9 +5,10 @@ from PyQt5.QtWidgets import (QApplication, QGroupBox, QWidget, QVBoxLayout, QCom
                              QLineEdit, QPushButton, QFileDialog, QProgressBar, QTextBrowser, QMessageBox)
 from PyQt5.QtGui import QDesktopServices
 from PyQt5.QtCore import QUrl
-from  gui_config import VALID_DOC_EXTENSIONS, INDEX_ROOT_DIR, APP_WIDTH, APP_HEIGHT, STYLES
 
 import helpers.FileOperations.indexingthread as fidx
+from gui_config import INDEX_ROOT_DIR, APP_WIDTH, APP_HEIGHT, STYLES
+from helpers.FileOperations.textextractor import VALID_EXTENSIONS
 
 
 class IndexSearchApp(QWidget):
@@ -27,7 +28,7 @@ class IndexSearchApp(QWidget):
         return [os.path.join(root, file)
                 for root, _, files in os.walk(folder)
                 for file in files
-                if file.lower().endswith(VALID_DOC_EXTENSIONS)]
+                if file.lower().endswith(VALID_EXTENSIONS)]
 
     def __init__(self, index_root_dir: str = INDEX_ROOT_DIR):
         super().__init__()

@@ -1,35 +1,47 @@
 import os
 from docx import Document
 from pypdf import PdfReader
-from ..Logger import mylogger
+from typing import Callable
 
 
-def extract_text_from_docx(file_path: str) -> str:
+DOCU_EXTENSIONS = ('.docx', '.pdf')
+TEXT_EXTENSIONS = ('.txt', '.md')
+VALID_EXTENSIONS = DOCU_EXTENSIONS + TEXT_EXTENSIONS
+
+def _extract_from_docx(file_path: str) -> str:
     doc = Document(file_path)
     return "\n".join(paragraph.text for paragraph in doc.paragraphs)
 
-def extract_text_from_pdf(file_path: str) -> str:
+def _extract_from_pdf(file_path: str) -> str:
     reader = PdfReader(file_path)
     return "\n".join(page.extract_text() for page in reader.pages)
 
-def extract_text_from_txt(file_path: str) -> str:
-    with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
+def _extract_from_text(file_path: str) -> str:
+    with open(file_path, "r") as f:
         return f.read()
 
-EXTRACTORS = {
-    ".docx": extract_text_from_docx,
-    ".doc": extract_text_from_docx,
-    ".pdf": extract_text_from_pdf,
-    ".txt": extract_text_from_txt,
-    ".md": extract_text_from_txt,
-}
+def _get_extractor(extension: str) -> Callable[[str], str]:
+    extension = f".{extension.lower().lstrip('.')}"
+
+    extractors = {
+        ".docx": _extract_from_docx,
+        ".pdf": _extract_from_pdf,
+    }
+
+    # Añadimos una misma función para todas las extensiones que representan fichero de texto plano
+    for doctype in TEXT_EXTENSIONS:
+        extractors.update({doctype:_extract_from_text})
+
+    return extractors.get(extension, None)
 
 def extract_content(file_path: str) -> str:
     _, ext = os.path.splitext(file_path)
-    extractor = EXTRACTORS.get(ext.lower())
-    if extractor:
-        try:
-            return extractor(file_path)
-        except Exception as e:
-            mylogger.log.warning(f"No se ha podido extraer texto de {file_path}: {e}")
-    return ""
+    extractor_func =_get_extractor(ext)
+
+    if not extractor_func:
+        raise ValueError(f"No se admiten fichero con extensión '{ext}'.")
+
+    try:
+        return extractor_func(file_path)
+    except Exception as e:
+        raise ValueError(f"Error al extraer texto de {file_path}: {e}")

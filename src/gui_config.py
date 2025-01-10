@@ -1,4 +1,3 @@
-VALID_DOC_EXTENSIONS = ('.docx', '.pdf', '.txt', '.md')
 INDEX_ROOT_DIR = 'indexdir'
 APP_WIDTH = 750
 APP_HEIGHT = 900
