@@ -1,31 +1,53 @@
 import hashlib
 import pickle
+from pathlib import Path
 
 
-def compute_hash(filepath: str) -> str:
+CHUNK_SIZE = 8192  # Tamaño de bloque para leer archivos
+
+
+def compute_hash(file_path: Path, include_path_in_hash: bool = False) -> str:
     """
-    Calcula el hash del fichero teniendo en cuenta su contenido y su ruta completa
-    para detectar si cambia de contenido y/o de carpeta en el disco.
+    Calcula el hash de un fichero. Puede incluir su ruta en el cálculo para detectar cambios
+    en su localización.
     """
+    if not file_path.exists() or not file_path.is_file():
+        raise FileNotFoundError(f"El archivo '{file_path}' no existe o no es un archivo válido.")
+
     hash_func = hashlib.sha256()
 
-    # Incluir el filepath en el cálculo del hash
-    hash_func.update(filepath.encode('utf-8'))
+    # Para detectar si el fichero se mueve de carpeta aunque el contenido no varíe.
+    if include_path_in_hash:
+        hash_func.update(str(file_path).encode('utf-8'))
 
-    # Procesar el contenido del fichero para el cálculo
-    with open(filepath, 'rb') as f:
-        while chunk := f.read(8192):
+    # Hash del contenido del fichero
+    with file_path.open('rb') as f:
+        while chunk := f.read(CHUNK_SIZE):
             hash_func.update(chunk)
+
     return hash_func.hexdigest()
 
 
-def save_hash_file(filepath: str, hashes: {}) -> None:
-    with open(filepath, 'wb') as f:
-        pickle.dump(hashes, f)
-
-def read_hash_file(filepath: str) -> {}:
+def save_hashes_and_filenames(file_path: Path, files_hashes: dict) -> None:
+    """
+    Guarda en disco un diccionario de tipo {<ruta_al_fichero> : <hash_del_fichero>}
+    """
     try:
-        with open(filepath, 'rb') as f:
-            return dict(pickle.load(f))
-    except FileNotFoundError:
-        return {}
+        with file_path.open('wb') as f:
+            pickle.dump(files_hashes, f)
+    except Exception as e:
+        raise IOError(f"Error al guardar el archivo de hashes '{file_path}': {e}")
+
+
+def read_hashes_and_filenames(file_path: Path) -> dict:
+    """
+    Lee desde disco un diccionario de tipo {<ruta_al_fichero> : <hash_del_fichero>}
+    """
+    if not file_path.exists():
+        raise IOError(f"No existe el archivo '{file_path}'")
+
+    try:
+        with file_path.open('rb') as f:
+            return pickle.load(f)
+    except Exception as e:
+        raise IOError(f"Error al leer el archivo de hashes '{file_path}': {e}")

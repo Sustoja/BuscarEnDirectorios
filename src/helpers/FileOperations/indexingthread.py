@@ -1,5 +1,5 @@
 import os
-from pathlib import PurePath
+from pathlib import Path
 from PyQt5.QtCore import QThread, pyqtSignal
 from whoosh.analysis import StemmingAnalyzer, CharsetFilter
 from whoosh.fields import Schema, TEXT, ID
@@ -8,7 +8,7 @@ from whoosh.qparser import MultifieldParser
 from whoosh.support.charset import accent_map
 from whoosh.writing import AsyncWriter
 
-from .filehashing import compute_hash, save_hash_file, read_hash_file
+from .filehashing import compute_hash, save_hashes_and_filenames, read_hashes_and_filenames
 from .textextractor import extract_content
 from ..Logger import mylogger
 
@@ -54,14 +54,17 @@ class IndexingThread(QThread):
             old_hashes = {}
         else:
             idx = open_dir(self.index_folder)
-            hash_file = str(PurePath(self.index_folder) / ARCHIVO_HASHES)
-            old_hashes = read_hash_file(hash_file)
+            hash_file = Path(self.index_folder) / ARCHIVO_HASHES
+            try:
+                old_hashes = read_hashes_and_filenames(hash_file)
+            except IOError:
+                old_hashes = {}
 
         writer = AsyncWriter(idx)
         new_hashes = {}
 
         for i, file_path in enumerate(self.docs_list):
-            current_hash = compute_hash(file_path)
+            current_hash = compute_hash(Path(file_path), True)
             new_hashes[current_hash] = file_path
 
             if (current_hash not in old_hashes) or (old_hashes[current_hash] != file_path):
@@ -82,8 +85,8 @@ class IndexingThread(QThread):
                 mylogger.log.info(f"Eliminando del índice: {deleted_path}")
 
         writer.commit()
-        hash_file = str(PurePath(self.index_folder) / ARCHIVO_HASHES)
-        save_hash_file(hash_file, new_hashes)
+        hash_file = Path(self.index_folder) / ARCHIVO_HASHES
+        save_hashes_and_filenames(hash_file, new_hashes)
         self.indexing_complete.emit()
 
 
