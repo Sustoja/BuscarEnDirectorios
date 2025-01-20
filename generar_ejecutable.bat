@@ -1,0 +1,1 @@
+pyinstaller --distpath .\EjecutableWindows --workpath .\EjecutableWindows\tmp\build .\EjecutableWindows\BuscarEnDirectorios.spec
