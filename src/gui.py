@@ -12,7 +12,7 @@ from helpers.FileOperations.textextractor import VALID_EXTENSIONS
 
 
 class IndexSearchApp(QWidget):
-    """Interfaz gráfico para la plicación de indexación y búsqueda de archivos."""
+    """Interfaz gráfico para la aplicación de indexación y búsqueda de archivos."""
 
     @staticmethod
     def replace_underscores(text: str) -> str:
@@ -28,7 +28,7 @@ class IndexSearchApp(QWidget):
         return [os.path.join(root, file)
                 for root, _, files in os.walk(folder)
                 for file in files
-                if file.lower().endswith(VALID_EXTENSIONS)]
+                if file.lower().endswith(VALID_EXTENSIONS) and not (file.startswith('.') or file.startswith('~'))]
 
     def __init__(self, index_root_dir: str = INDEX_ROOT_DIR):
         super().__init__()
@@ -82,7 +82,7 @@ class IndexSearchApp(QWidget):
         self.idx_folders_combo.addItems(self.idx_subfolders)
 
         self.idx_folder_button = QPushButton("Indexar carpeta")
-        self.idx_folder_button.clicked.connect(self.index_new_folder)
+        self.idx_folder_button.clicked.connect(self.index_new_folder) # type: ignore
 
         idx_group_layout.addWidget(self.idx_folders_combo, 0, 0)
         idx_group_layout.addWidget(self.idx_folder_button, 0, 1)
@@ -96,9 +96,9 @@ class IndexSearchApp(QWidget):
         self.search_group.setLayout(search_group_layout)
 
         self.search_input = QLineEdit()
-        self.search_input.returnPressed.connect(self.perform_search)
+        self.search_input.returnPressed.connect(self.perform_search) # type: ignore
         self.search_button = QPushButton("Buscar")
-        self.search_button.clicked.connect(self.perform_search)
+        self.search_button.clicked.connect(self.perform_search) # type: ignore
 
         search_group_layout.addWidget(self.search_input, 0, 0)
         search_group_layout.addWidget(self.search_button, 0, 1)
@@ -109,7 +109,7 @@ class IndexSearchApp(QWidget):
     def _setup_results_browser(self):
         self.results_browser = QTextBrowser()
         self.results_browser.setOpenLinks(False)
-        self.results_browser.anchorClicked.connect(self.open_link_in_browser)
+        self.results_browser.anchorClicked.connect(self.open_link_in_browser) # type: ignore
 
     def _setup_progress_bar(self):
         self.progress_label = QLabel("Progreso:")
@@ -208,7 +208,9 @@ class IndexSearchApp(QWidget):
         if results:
             for file_path in results:
                 file_name = file_path.split('/')[-1]
-                self.results_browser.append(f"<a href='file://{file_path}'>{file_name}</a>")
+                url = QUrl.fromLocalFile(file_path).toString()
+                self.results_browser.append(f'<a href="{url}">{file_name}</a>')
+
         else:
             self.results_browser.append("<p>No se encontraron resultados.</p>")
 
